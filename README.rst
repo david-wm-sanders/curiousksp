@@ -51,7 +51,7 @@ Overview
     :alt: Supported implementations
     :target: https://pypi.org/project/curiousksp
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/david-wm-sanders/curiousksp/v0.0.0.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/david-wm-sanders/curiousksp/v0.0.1.svg
     :alt: Commits since latest release
     :target: https://github.com/david-wm-sanders/curiousksp/compare/v0.0.0...master
 
