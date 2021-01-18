@@ -68,11 +68,11 @@ setup(
         'Issue Tracker': 'https://github.com/david-wm-sanders/curiousksp/issues',
     },
     keywords=[
-        # eg: 'keyword1', 'keyword2', 'keyword3',
+        'ksp', 'Kerbal Space Program', 'curio', 'kRPC'
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.9.1',
     install_requires=[
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
+        'curio>=1.4', 'krpc>=0.4.8'
     ],
     extras_require={
         # eg:

@@ -16,6 +16,9 @@ Why does this file exist, and why not put this in __main__?
 """
 import sys
 
+import curio
+import krpc
+
 
 def main(argv=sys.argv):
     """
@@ -28,4 +31,6 @@ def main(argv=sys.argv):
     Does stuff.
     """
     print(argv)
+    print("hello, start here yo!")
+    print("this is now editable - wooo")
     return 0
