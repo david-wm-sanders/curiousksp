@@ -15,6 +15,7 @@ Why does this file exist, and why not put this in __main__?
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
 import sys
+import time
 
 import curio
 import krpc
@@ -30,7 +31,13 @@ def main(argv=sys.argv):
 
     Does stuff.
     """
-    print(argv)
-    print("hello, start here yo!")
-    print("this is now editable - wooo")
+    # print(argv)
+    # print("hello, start here yo!")
+    # print("this is now editable - wooo")
+    conn = krpc.connect(name="curiousksp::test")
+    # print(conn.krpc.get_status().version)
+    print(conn.krpc.get_status())
+    # vessel = conn.space_center.active_vessel
+    # print(vessel.name)
+    time.sleep(5)
     return 0
