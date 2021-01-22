@@ -72,7 +72,7 @@ setup(
     ],
     python_requires='>=3.9.1',
     install_requires=[
-        'curio>=1.4', 'krpc>=0.4.8'
+        'curio>=1.4', 'krpc>=0.4.8', 'docopt>=0.6.2'
     ],
     extras_require={
         # eg:
