@@ -15,13 +15,19 @@
 """curiousksp.py - ksp chaos with curio coroutines
 
 Usage:
-    curiousksp.py [--dbg_task_filter=<a,b,c>] [--dbg_max_time=<float>]
+    curiousksp.py [--addr=<ip>] [--rpc=<port>] [--stream=<port>] [--dbg_task_filter=<a,b,c>] [--dbg_max_time=<float>]
     curiousksp.py _monitor
     curiousksp.py _console
     curiousksp.py _display
+    curiousksp.py _control
+    curiousksp.py _process
 
 Options:
-    --dbg_max_time=<float>  Max time for curio.debug.longblock debugger [default: 0.1]
+    --addr=<ip>                IP address of target host running KSP w/ kRPC [default: 127.0.0.1]
+    --rpc=<port>               kRPC port [default: 50000]
+    --stream=<port>            kRPC stream port [default: 50001]
+    --dbg_task_filter=<a,b,c>  Comma-separated list of Task names for curio.debug.schedtrace filter
+    --dbg_max_time=<float>     Max time for curio.debug.longblock debugger [default: 0.1]
 """
 import sys
 import time
@@ -67,28 +73,10 @@ def main(argv=sys.argv):
 
     # asynkrpc(?) one day... XD
 
-    # [blocking] make a connection to ksp via krpc
-    # conn = krpc.connect(name="curious::test")
-    # [blocking] get the krpc status
-    # print(conn.krpc.get_status())
-    # [blocking] get the active vessel and print its name
-    # vessel = conn.space_center.active_vessel
-    # print(vessel.name)
-    # time.sleep(5)
-
+    addr, rpc_port, stream_port = args["--addr"], int(args["--rpc"]), int(args["--stream"])
     debuggers = _configure_debuggers(filter_=args["--dbg_task_filter"], max_time=args["--dbg_max_time"])
-    mc = MissionControl(debuggers=debuggers)
+    mc = MissionControl(krpc_addr=addr, krpc_port=rpc_port, krpcs_port=stream_port, debuggers=debuggers)
     report = mc.run()
-
-    # while True:
-    #     try:
-    #         pass
-    #     except KeyboardInterrupt:
-    #         response = input("Keyboard interrupt - are you sure you want to quit? Y/N: ")
-    #         if response.lower() in ["y", "yes"]:
-    #             print("Shutting down curiousksp...")
-    #             # mc.run(shutdown=True)
-    #             break
 
     # Little point in starting everything up if we can't even make a connection to KSP so do a quick check
     # if not _check_connection():
