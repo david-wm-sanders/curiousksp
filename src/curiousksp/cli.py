@@ -76,15 +76,19 @@ def main(argv=sys.argv):
     # print(vessel.name)
     # time.sleep(5)
 
-    try:
-        debuggers = _configure_debuggers(filter_=args["--dbg_task_filter"], max_time=args["--dbg_max_time"])
-        mc = MissionControl(debuggers=debuggers)
-        report = mc.run()
-        # time.sleep(30)
-    except KeyboardInterrupt:
-        pass
-        # TODO: improve with code to confirm exit and cleanly shutdown MissionControl etc etc
+    debuggers = _configure_debuggers(filter_=args["--dbg_task_filter"], max_time=args["--dbg_max_time"])
+    mc = MissionControl(debuggers=debuggers)
+    report = mc.run()
 
+    # while True:
+    #     try:
+    #         pass
+    #     except KeyboardInterrupt:
+    #         response = input("Keyboard interrupt - are you sure you want to quit? Y/N: ")
+    #         if response.lower() in ["y", "yes"]:
+    #             print("Shutting down curiousksp...")
+    #             # mc.run(shutdown=True)
+    #             break
 
     # Little point in starting everything up if we can't even make a connection to KSP so do a quick check
     # if not _check_connection():
