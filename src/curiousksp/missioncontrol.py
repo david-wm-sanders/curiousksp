@@ -9,8 +9,8 @@ from curio.monitor import Monitor as CurioMonitor
 
 class MissionControl:
     def __init__(self, name="curious",
-                    krpc_addr="127.0.0.1", krpc_port=50000, krpcs_port=50001,
-                    monitor_port=42047, debuggers=None):
+                 krpc_addr="127.0.0.1", krpc_port=50000, krpcs_port=50001,
+                 monitor_port=42047, debuggers=None):
         self._name = name
         self._krpc_addr = krpc_addr
         self._krpc_port = krpc_port
