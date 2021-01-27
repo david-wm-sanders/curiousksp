@@ -14,8 +14,8 @@ class MissionControl:
 
         # init curio.Kernel and curio.monitor.Monitor as None
         self._ck, self._cm = None, None
-        # setup the default shutdown mode, one of "now" | "ask soft" | "ask hard"
-        self._shutdown_mode = "now"
+        # setup the default shutdown mode, one of "now" | "ask" | "ask soft"
+        self._shutdown_mode = "ask"
         self._running = False
 
         self._sigint_event = curio.UniversalEvent()
@@ -28,20 +28,32 @@ class MissionControl:
     def _sigint_shutdown(self):
         print(f"Shutting down '{self._name}' mission control...")
         self._running = False
-        self._sigint_event.clear()
+        # self._sigint_event.clear()
 
     async def sigint(self):
         while self._running:
             await self._sigint_event.wait()
-            try:
-                response = input("Keyboard interrupt: are you sure you want to quit? Y/N: ")
-                if response.lower() in ["y", "ye", "yes"]:
-                    self._sigint_shutdown()
-            except EOFError as e:
-                # occurs at Ctrl-C/KeyboardInterrupt triggered when the input prompt is open
-                # shutdown on second Ctrl-C mode
+            self._sigint_event.clear()
+            if self._shutdown_mode == "now":
+                # signal shutdown as soon as this task picks up the sigint_event it was waiting on
                 self._sigint_shutdown()
-                # TODO: clear _sigint_event and ignore mode (effectively a hard confirm shutdown mode)
+            elif self._shutdown_mode.startswith("ask"):
+                try:
+                    response = input("Keyboard interrupt: are you sure you want to quit? Y/N: ")
+                    if response.lower() in ["y", "ye", "yes"]:
+                        self._sigint_shutdown()
+                    else:
+                        print("Shutdown declined...")
+                except EOFError as e:
+                    # occurs at Ctrl-C/KeyboardInterrupt triggered when the input prompt is open
+                    if self._shutdown_mode == "ask soft":
+                        # shutdown for the second Ctrl-C that has triggered
+                        self._sigint_shutdown()
+                    else:
+                        # ignore the sigint - requiring hard confirmation from user to quit
+                        print("Response required, none was given :(")
+            else:
+                raise ValueError(f"MissionControl._shutdown_mode must be 'now'|'ask'|'ask soft'")
 
     async def start(self):
         self._running = True
