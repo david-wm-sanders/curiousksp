@@ -39,9 +39,9 @@ class MissionControl:
     async def _sigint_shutdown(self):
         print(f"Shutting down '{self._name}' mission control...")
         self._running = False
+        # cancel tasks
         if self._start_task:
             await self._start_task.cancel()
-        # TODO: signal all tasks to end via Task.cancel here? or in start with self._running or
 
     async def sigint(self):
         while self._running:
@@ -87,7 +87,7 @@ class MissionControl:
                 except ConnectionRefusedError as e:
                     # connection refused :(, let's do nothing, wait a bit, and then try again
                     print("Connection refused - is KSP running and is the kRPC server started?")
-                    print("Waiting 10 seconds before polling for a KSP/kRPC connection again...")
+                    print("Waiting 10 seconds before next KSP/kRPC connection poll attempt...")
                 await curio.sleep(10)
         except curio.CancelledError:
             print("MissionControl.poll_for_ksp_connect cancelled")
@@ -100,14 +100,22 @@ class MissionControl:
             # setup background task to wait for SIGINT events
             await curio.spawn(self.sigint, daemon=True)
             # TODO: spawn monitor console with subprocess.Popen(NEW_CONSOLE)
-            # TODO: spawn _connection_poll task
             poll_conn_task = await curio.spawn(self.poll_for_ksp_connect)
             conn = await poll_conn_task.join()
-            # print(r)
             print(f"{conn=}")
+            # HACK: experiment with conn: krpc.client.Client in a totally blocking fashion
+            print(conn.krpc.get_status())
+            print(f"clients:{conn.krpc.clients}")
+            # print(f"services=\n {conn.krpc.get_services()}")
+            print(f"current game scene: {conn.krpc.current_game_scene}")
+            print(f"paused: {conn.krpc.paused}")
+            sci, ksd, rep = conn.space_center.science, conn.space_center.funds, conn.space_center.reputation
+            print(f"current: sci={sci:.1f}, ksd={ksd:.2f}, rep={rep:.0f}")
+            # TODO: spawn heartbeat/status class
             # HACK: run for a while - so we have time to check interaction of sigint etc during dev
             #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
-            await curio.sleep(15)
+            await curio.sleep(5)
+            return "timeout: end of all tasks reached"
             # raise NotImplementedError
         except curio.CancelledError:
             # print(f"tracebacks::\n{dir(e.__traceback__)}")
