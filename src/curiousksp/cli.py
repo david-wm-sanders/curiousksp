@@ -77,6 +77,13 @@ def main(argv=sys.argv):
     debuggers = _configure_debuggers(filter_=args["--dbg_task_filter"], max_time=args["--dbg_max_time"])
     mc = MissionControl(krpc_addr=addr, krpc_port=rpc_port, krpcs_port=stream_port, debuggers=debuggers)
     report = mc.run()
+    print(f"{report=}")
+
+    # [blocking] get the krpc status
+    # print(conn.krpc.get_status())
+    # [blocking] get the active vessel and print its name
+    # vessel = conn.space_center.active_vessel
+    # print(vessel.name)
 
     # Little point in starting everything up if we can't even make a connection to KSP so do a quick check
     # if not _check_connection():

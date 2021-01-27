@@ -65,53 +65,47 @@ class MissionControl:
                 raise ValueError(f"MissionControl._shutdown_mode must be 'now'|'ask'|'ask soft'")
 
     def _connect(self, name=None, address="127.0.0.1", rpc_port=50000, stream_port=50001):
-        try:
-            print(f"Connecting to kRPC at '{address}' as '{name}' [{rpc_port=}, {stream_port=}]")
-            conn = krpc.connect(name=name, address=address, rpc_port=rpc_port, stream_port=stream_port)
-            return conn
-            # [blocking] get the krpc status
-            # print(conn.krpc.get_status())
-            # [blocking] get the active vessel and print its name
-            # vessel = conn.space_center.active_vessel
-            # print(vessel.name)
-        except ConnectionRefusedError as e:
-            print("Connection refused by target - is KSP even running?")
-            # return None
-            raise
+        print(f"Connecting to kRPC at '{address}' as '{name}' [{rpc_port=}, {stream_port=}]")
+        conn = krpc.connect(name=name, address=address, rpc_port=rpc_port, stream_port=stream_port)
+        return conn
 
     async def poll_for_ksp_connect(self):
         # TODO: implement ofc :'D
         # the synchronous parts of this need to run in a separate thread - now it begins...
         try:
-            while True:
-                conn = await curio.run_in_thread(partial(self._connect, name=self._name, address=self._krpc_addr,
-                                                            rpc_port=self._krpc_port, stream_port=self._krpcs_port))
-                if conn:
-                    # we have a connection, so let's return it
+            while self._running:
+                try:
+                    # use a functools.partial here to pass keyword arguments into the synchronous function _connect
+                    conn = await curio.run_in_thread(partial(self._connect, name=self._name, address=self._krpc_addr,
+                                                             rpc_port=self._krpc_port, stream_port=self._krpcs_port))
                     return conn
-                else:
-                    # we don't have a connection :(, let's wait a bit and then try again
+                except ConnectionRefusedError as e:
+                    # connection refused :(, let's do nothing, wait a bit, and then try again
+                    print("Connection refused - is KSP running and is the kRPC server started?")
                     print("Waiting 10 seconds before polling for a KSP/kRPC connection again...")
-                    await curio.sleep(10)
-                # TODO: try to make a connection
-                # conn = await curio.run_in_thread(self._connect, name=self.name
+                await curio.sleep(10)
         except curio.CancelledError:
             print("async poll_for_ksp_connect cancelled")
             raise
-        # conn = await curio.run_in_thread(self._connect, name=self.name
 
     async def start(self):
-        self._running = True
-        # setup background task to wait for SIGINT events
-        await curio.spawn(self.sigint, daemon=True)
-        # TODO: spawn monitor console with subprocess.Popen(NEW_CONSOLE)
-        # TODO: spawn _connection_poll task
-        conn = await self.poll_for_ksp_connect()
-        print(f"{conn=}")
-        # HACK: run for a while - so we have time to check interaction of sigint etc during dev
-        #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
-        await curio.sleep(15)
-        # raise NotImplementedError
+        try:
+            self._running = True
+            # setup background task to wait for SIGINT events
+            await curio.spawn(self.sigint, daemon=True)
+            # TODO: spawn monitor console with subprocess.Popen(NEW_CONSOLE)
+            # TODO: spawn _connection_poll task
+            conn_task = await curio.spawn(self.poll_for_ksp_connect)
+            conn = await conn_task.join()
+            # print(r)
+            print(f"{conn=}")
+            # HACK: run for a while - so we have time to check interaction of sigint etc during dev
+            #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
+            await curio.sleep(15)
+            # raise NotImplementedError
+        except curio.CancelledError as e:
+            print("bye bye, MissionControl.start aborted!")
+            print(e)
 
     def run(self):
         self._ck = curio.Kernel(debug=self._debuggers, taskcls=curio.task.ContextTask)
