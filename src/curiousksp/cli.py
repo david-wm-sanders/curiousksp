@@ -40,14 +40,8 @@ from .debug import _configure_debuggers
 from .missioncontrol import MissionControl
 from .util import _check_connection
 
-# ahhhh
-# from curio.monitor import Monitor as CurioMonitor
-
 # import contextvar
 # ksp_conn: ContextVar[krpc.Connection] = ContextVar('ksp_conn', default=None)
-
-
-# CURIOUS_MONITOR_PORT = 42047
 
 
 def main(argv=sys.argv):
@@ -60,18 +54,16 @@ def main(argv=sys.argv):
 
     Does stuff.
     """
-    # print(dir(curio))
-
     args = docopt(__doc__)
     print(args)
     # le basics
-    # print(argv)
-    # TODO: setup docopt
     if args["_monitor"]:
         pass
-        # TODO: set up
 
-    # asynkrpc(?) one day... XD
+    # TODO: asynkrpc(?) one day... XD
+    # TODO: type anno
+    # TODO: set up logging
+    # TODO: process comma-sep debuggers args list of Task names into a set of the Task names
 
     addr, rpc_port, stream_port = args["--addr"], int(args["--rpc"]), int(args["--stream"])
     debuggers = _configure_debuggers(filter_=args["--dbg_task_filter"], max_time=args["--dbg_max_time"])
@@ -79,8 +71,6 @@ def main(argv=sys.argv):
     report = mc.run()
     print(f"{report=}")
 
-    # [blocking] get the krpc status
-    # print(conn.krpc.get_status())
     # [blocking] get the active vessel and print its name
     # vessel = conn.space_center.active_vessel
     # print(vessel.name)

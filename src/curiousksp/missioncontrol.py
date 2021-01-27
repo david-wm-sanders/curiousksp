@@ -18,9 +18,11 @@ class MissionControl:
         self._monitor_port = monitor_port
         self._debuggers = debuggers
 
+        # TODO: separate the signalling/shutdown_mode aspects into subclass or composite?
         # setup the default shutdown mode, one of "now" | "ask" | "ask soft"
         self._shutdown_mode = "ask"
         # set the default running state
+        # TODO: replace running paradigm by making all Tasks cancellable?
         self._running = False
         # init curio.Kernel and curio.monitor.Monitor as None
         self._ck, self._cm = None, None
@@ -36,6 +38,7 @@ class MissionControl:
         if not self._sigint_event.is_set():
             self._sigint_event.set()
 
+    # TODO: rename to shutdown
     async def _sigint_shutdown(self):
         print(f"Shutting down '{self._name}' mission control...")
         self._running = False
@@ -44,6 +47,7 @@ class MissionControl:
             await self._start_task.cancel()
 
     async def sigint(self):
+        # TODO: replace running paradigm by making all Tasks cancellable?
         while self._running:
             await self._sigint_event.wait()
             self._sigint_event.clear()
@@ -53,6 +57,8 @@ class MissionControl:
             elif self._shutdown_mode.startswith("ask"):
                 try:
                     # TODO: this really needs to use some form of async console.readline so it doesn't block :/
+                    # atm, this works like a pause while awaiting confirmation or declination to shutdown
+                    # because input blocks the Task and thus the curio.Kernel
                     response = input("Ctrl-C! Confirm to end all missions and shutdown mission control? Y/N: ")
                     if response.lower() in ["y", "ye", "yes"]:
                         await self._sigint_shutdown()
@@ -75,7 +81,7 @@ class MissionControl:
         return conn
 
     async def poll_for_ksp_connect(self):
-        # TODO: implement ofc :'D
+        # TODO: replace self._running with True and send poll_for_ksp_connect_task.cancel() to end
         # the synchronous parts of this need to run in a separate thread - now it begins...
         try:
             while self._running:
@@ -94,6 +100,7 @@ class MissionControl:
             raise
 
     async def start(self):
+        # TODO: add docstrings!
         self._start_task = await curio.current_task()
         try:
             self._running = True
@@ -130,5 +137,5 @@ class MissionControl:
         # run the monitor task with the kernel
         # returns None immediately because it is daemonic(?)
         self._ck.run(self._cm.start)
-        # TODO: create the start(/main) task and run with self._ck
+        # create the start(/main) task and run with self._ck
         return self._ck.run(self.start)
