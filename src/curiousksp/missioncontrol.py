@@ -18,11 +18,14 @@ class MissionControl:
         self._monitor_port = monitor_port
         self._debuggers = debuggers
 
-        # init curio.Kernel and curio.monitor.Monitor as None
-        self._ck, self._cm = None, None
         # setup the default shutdown mode, one of "now" | "ask" | "ask soft"
         self._shutdown_mode = "ask"
+        # set the default running state
         self._running = False
+        # init curio.Kernel and curio.monitor.Monitor as None
+        self._ck, self._cm = None, None
+        # init task refs as None
+        self._start_task = None
 
         # setup a signal so that we can catch KeyboardInterrupt/Ctrl-C and handle them async
         self._sigint_event = curio.UniversalEvent()
@@ -33,9 +36,11 @@ class MissionControl:
         if not self._sigint_event.is_set():
             self._sigint_event.set()
 
-    def _sigint_shutdown(self):
+    async def _sigint_shutdown(self):
         print(f"Shutting down '{self._name}' mission control...")
         self._running = False
+        if self._start_task:
+            await self._start_task.cancel()
         # TODO: signal all tasks to end via Task.cancel here? or in start with self._running or
 
     async def sigint(self):
@@ -44,20 +49,20 @@ class MissionControl:
             self._sigint_event.clear()
             if self._shutdown_mode == "now":
                 # signal shutdown as soon as this task picks up the sigint_event it was waiting on
-                self._sigint_shutdown()
+                await self._sigint_shutdown()
             elif self._shutdown_mode.startswith("ask"):
                 try:
                     # TODO: this really needs to use some form of async console.readline so it doesn't block :/
                     response = input("Ctrl-C! Confirm to end all missions and shutdown mission control? Y/N: ")
                     if response.lower() in ["y", "ye", "yes"]:
-                        self._sigint_shutdown()
+                        await self._sigint_shutdown()
                     else:
                         print("Shutdown declined...")
                 except EOFError as e:
                     # occurs at Ctrl-C/KeyboardInterrupt triggered when the input prompt is open
                     if self._shutdown_mode == "ask soft":
                         # shutdown for the second Ctrl-C that has triggered
-                        self._sigint_shutdown()
+                        await self._sigint_shutdown()
                     else:
                         # ignore the sigint - requiring hard confirmation from user to quit
                         print("Response required, none was given :(")
@@ -85,27 +90,31 @@ class MissionControl:
                     print("Waiting 10 seconds before polling for a KSP/kRPC connection again...")
                 await curio.sleep(10)
         except curio.CancelledError:
-            print("async poll_for_ksp_connect cancelled")
+            print("MissionControl.poll_for_ksp_connect cancelled")
             raise
 
     async def start(self):
+        self._start_task = await curio.current_task()
         try:
             self._running = True
             # setup background task to wait for SIGINT events
             await curio.spawn(self.sigint, daemon=True)
             # TODO: spawn monitor console with subprocess.Popen(NEW_CONSOLE)
             # TODO: spawn _connection_poll task
-            conn_task = await curio.spawn(self.poll_for_ksp_connect)
-            conn = await conn_task.join()
+            poll_conn_task = await curio.spawn(self.poll_for_ksp_connect)
+            conn = await poll_conn_task.join()
             # print(r)
             print(f"{conn=}")
             # HACK: run for a while - so we have time to check interaction of sigint etc during dev
             #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
             await curio.sleep(15)
             # raise NotImplementedError
-        except curio.CancelledError as e:
-            print("bye bye, MissionControl.start aborted!")
-            print(e)
+        except curio.CancelledError:
+            # print(f"tracebacks::\n{dir(e.__traceback__)}")
+            print("[cancelled] MissionControl.start! cleaning up:")
+            print(f"Cancelling '{poll_conn_task.name}' [id={poll_conn_task.id}, state={poll_conn_task.state}]...")
+            await poll_conn_task.cancel()
+            return "cancelled"
 
     def run(self):
         self._ck = curio.Kernel(debug=self._debuggers, taskcls=curio.task.ContextTask)
