@@ -20,7 +20,7 @@ project = 'curiousksp'
 year = '2021'
 author = 'David William Morris Sanders'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '0.1.2'
+version = release = '0.1.3'
 
 pygments_style = 'trac'
 templates_path = ['.']
