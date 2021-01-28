@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""some form of configuration for building our docs? we have docs?!."""
 from __future__ import unicode_literals
 
 import os

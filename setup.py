@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
+"""install curiousksp library and its curious cli."""
 
 import io
 import re
@@ -14,6 +15,7 @@ from setuptools import setup
 
 
 def read(*names, **kwargs):
+    """Read some things with default encoding of utf8?."""
     with io.open(
         join(dirname(__file__), *names),
         encoding=kwargs.get('encoding', 'utf8')

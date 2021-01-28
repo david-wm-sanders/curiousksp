@@ -1,3 +1,4 @@
+"""Conigure pytest fixtures, etc."""
 # from https://loguru.readthedocs.io/en/stable/resources/migration.html#making-things-work-with-pytest-and-caplog
 import logging
 import pytest
@@ -7,6 +8,7 @@ from loguru import logger
 
 @pytest.fixture
 def caplog(_caplog):
+    """Capture logs so that they can be tested against."""
     class PropogateHandler(logging.Handler):
         def emit(self, record):
             logging.getLogger(record.name).handle(record)

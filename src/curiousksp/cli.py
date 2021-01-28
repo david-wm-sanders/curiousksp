@@ -12,7 +12,7 @@
 #     there's no ``curiousksp.__main__`` in ``sys.modules``.
 #
 #   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
-"""curiousksp.py - ksp chaos with curio coroutines
+"""curiousksp.py - ksp chaos with curio coroutines. XD.
 
 Usage:
     curiousksp.py [--addr=<ip>] [--rpc=<port>] [--stream=<port>] [--dbg_task_filter=<a,b,c>] [--dbg_max_time=<float>]
@@ -47,15 +47,7 @@ from .missioncontrol import MissionControl
 
 @logger.catch
 def main(argv=sys.argv):
-    """
-    Args:
-        argv (list): List of arguments
-
-    Returns:
-        int: A return code
-
-    Does stuff.
-    """
+    """Set up rich loguru cli based on arguments passed at command line."""
     # logger.configure(handlers=[{"sink": RichHandler(markup=True), "format": "{message}"}])
     # logger.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
     log_fmt = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \

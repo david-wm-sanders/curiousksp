@@ -1,3 +1,4 @@
+"""Define curio.debug.DebugBase`s derived from defaults to provide enhanced logging of Kernel task state."""
 import itertools
 # import logging
 import time
@@ -20,8 +21,11 @@ hidden_tasks = {"Kernel._make_kernel_runtime.<locals>._kernel_task",
 
 # subclass curio.debug.schedtrace and rewrite to use loguru logger
 class schedtrace(_schedtrace):
+    """Subclass curio.debug.schedtrace to output a richer loguru view of the Task scheduling state."""
+
     @staticmethod
     def _pretty_repr(task):
+        """Render beautified Task repr of form: ?id|cycle? where ? is <> if daemon else []."""
         location = ""
         filename, lineno = task.where()
         if filename and lineno:
@@ -38,32 +42,41 @@ class schedtrace(_schedtrace):
             return f"[{task.id}|{task.cycles}] '{task.name}'{location}"
 
     def created(self, task):
+        """Not log Task creation to reduce logging output."""
         # pass on logging anything here to reduce log volume
         pass
 
     def running(self, task):
+        """Log at SCHED level immediately before the next execution cycle of a Task."""
         if self.check_filter(task) and task.name not in hidden_tasks:
             self.log.log(self.level, f"RUN: {self._pretty_repr(task)}")
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def suspended(self, task, trap):
+        """Log at SCHED level after a Task has suspended due to trap, noting the state e.g. 'FUTURE_WAIT'."""
         if self.check_filter(task) and task.name not in hidden_tasks:
             self.log.log(self.level, f"SUSPEND: {self._pretty_repr(task)} on '{task.state}'")
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def terminated(self, task):
+        """Log at SCHED level after a Task has terminated but before it is collected (see curio.kernel.Activation)."""
         if self.check_filter(task) and task.name not in hidden_tasks:
             self.log.log(self.level, f"TERMINATED: {self._pretty_repr(task)}")
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
 
 class logcrash(_logcrash):
+    """Subclass curio.debug.logcrash to provide richer loguru output on this quest for sanity."""
+
     pass
     # TODO: need to subclass and override suspended to log with loguru, taking the task.exception as exc_info
 
 
 class longblock(_longblock):
+    """Subclass curio.debug.longblock to provide rich loguru logging when a Task blocks the kernel for a long time."""
+
     def suspended(self, task, trap):
+        """Log when a Task blocks the kernel for a time > self.max_time."""
         if self.check_filter(task):
             duration = time.monotonic() - self.start
             if duration > self.max_time:
@@ -72,6 +85,7 @@ class longblock(_longblock):
 
 
 def _configure_debuggers(filter_=None, max_time=0.1):
+    """Configure subclassed curio.debug.DebugBase`s for loguru logging (via Rich? maybe?)."""
     logger.debug(f"{filter_=}")
     schedtrace_ = schedtrace(log=logger, level=curio_sched_level.name)
     logcrash_ = logcrash(log=logger)

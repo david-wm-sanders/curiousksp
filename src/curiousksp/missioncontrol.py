@@ -1,4 +1,4 @@
-"""mission control!"""
+"""Define a Mission Control that bootstraps a curio.Kernel and jumps into the supernova of async/await Tasks."""
 import signal
 from functools import partial
 
@@ -10,9 +10,12 @@ from curio.monitor import Monitor as CurioMonitor
 
 
 class MissionControl:
+    """Defines a MissionControl instance that runs curio.Tasks asynchronously."""
+
     def __init__(self, name="curious",
                  krpc_addr="127.0.0.1", krpc_port=50000, krpcs_port=50001,
                  monitor_port=42047, debuggers=None):
+        """Initialise a new MissionControl instance."""
         self._name = name
         self._krpc_addr = krpc_addr
         self._krpc_port = krpc_port
@@ -37,10 +40,12 @@ class MissionControl:
 
     # TODO: add properties to guard internals like _name against changes
     def _handle_sigint(self, signo, frame):
+        """[sync] Callback for signal.signal - communicate sigint to curio with a UniversalEvent."""
         if not self._sigint_event.is_set():
             self._sigint_event.set()
 
     async def shutdown(self):
+        """Task: shutdown other running tasks. maybe even save some state first?."""
         logger.info(f"Shutting down '{self._name}' mission control...")
         self._running = False
         # cancel tasks
@@ -48,6 +53,7 @@ class MissionControl:
             await self._start_task.cancel()
 
     async def sigint(self):
+        """Task (daemonic): wait for sigint/Ctrl-C, [block] confirm quit, resume on declined or await shutdown."""
         # TODO: replace running paradigm by making all Tasks cancellable?
         while self._running:
             await self._sigint_event.wait()
@@ -77,11 +83,13 @@ class MissionControl:
                 raise ValueError(f"MissionControl._shutdown_mode must be 'now'|'ask'|'ask soft'")
 
     def _connect(self, name=None, address="127.0.0.1", rpc_port=50000, stream_port=50001):
+        """[sync] Return krpc.client.Client from blocking krpc.connect."""
         logger.info(f"Connecting to kRPC at '{address}' as '{name}' [{rpc_port=}, {stream_port=}]")
         conn = krpc.connect(name=name, address=address, rpc_port=rpc_port, stream_port=stream_port)
         return conn
 
     async def poll_for_ksp_connect(self):
+        """Task: poll for first connection as part of MissionControl.start - waiting 10 seconds before next attempt."""
         # TODO: replace self._running with True and send poll_for_ksp_connect_task.cancel() to end
         # the synchronous parts of this need to run in a separate thread - now it begins...
         try:
@@ -101,6 +109,7 @@ class MissionControl:
             raise
 
     async def start(self):
+        """Task: curio.Kernal.run(start) main that boots up the async parts of MissionControl."""
         # TODO: add docstrings!
         self._start_task = await curio.current_task()
         try:
@@ -133,6 +142,7 @@ class MissionControl:
             return "cancelled"
 
     def run(self):
+        """Stir this curious cauldron of dark async magic and kerbal witch/wizard blood already!."""
         self._ck = curio.Kernel(debug=self._debuggers, taskcls=curio.task.ContextTask)
         self._cm = CurioMonitor(self._ck, port=self._monitor_port)
         # run the monitor task with the kernel
