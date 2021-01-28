@@ -40,7 +40,6 @@ class MissionControl:
         if not self._sigint_event.is_set():
             self._sigint_event.set()
 
-    # TODO: rename to shutdown
     async def shutdown(self):
         logger.info(f"Shutting down '{self._name}' mission control...")
         self._running = False
