@@ -43,16 +43,12 @@ class schedtrace(_schedtrace):
 
     def running(self, task):
         if self.check_filter(task) and task.name not in hidden_tasks:
-            # filename, lineno = task.where()
-            # if filename and lineno:
-            #     p = Path(filename)
-            #     print(f"{p!r}:{lineno}")
             self.log.log(self.level, f"RUN: {self._pretty_repr(task)}")
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def suspended(self, task, trap):
         if self.check_filter(task) and task.name not in hidden_tasks:
-            self.log.log(self.level, f"SUSPEND: {self._pretty_repr(task)}")
+            self.log.log(self.level, f"SUSPEND: {self._pretty_repr(task)} on '{task.state}'")
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def terminated(self, task):
