@@ -95,7 +95,7 @@ class MissionControl:
                 except ConnectionRefusedError as e:
                     # connection refused :(, let's do nothing, wait a bit, and then try again
                     logger.error("Connection refused - is KSP running and is the kRPC server started?")
-                    logger.info("Waiting 10 seconds before next KSP/kRPC connection poll attempt...")
+                    logger.debug("Waiting 10 seconds before next KSP/kRPC connection poll attempt...")
                 await curio.sleep(10)
         except curio.CancelledError:
             logger.debug("MissionControl.poll_for_ksp_connect cancelled")

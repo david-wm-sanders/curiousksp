@@ -65,6 +65,7 @@ def main(argv=sys.argv):
     logger.configure(handlers=[{"sink": sys.stderr, "format": log_fmt}])
     logger.add("curiousksp.log", format=log_fmt, retention="7 days", rotation="1 day")
     # enable the library logging for CLI mode
+    # TODO: take a docopt to set tracing
     logger.enable("curiousksp")
 
     args = docopt(__doc__)
