@@ -12,6 +12,10 @@ from curio.debug import schedtrace as _schedtrace, logcrash as _logcrash, longbl
 # curio_sched_level = logger.level("CURIO", no=10, color="<yellow>", icon="🌟")
 # setup a custom level for curio debugging
 curio_sched_level = logger.level("SCHED", no=10, color="<yellow>")
+# TODO: how to make custom level work with RichHandler?
+# set of hidden tasks
+hidden_tasks = {"Kernel._make_kernel_runtime.<locals>._kernel_task",
+                "Monitor.start", "Monitor.monitor_task"}
 
 # subclass curio.debug.schedtrace and rewrite to use loguru logger
 class schedtrace(_schedtrace):
@@ -38,7 +42,7 @@ class schedtrace(_schedtrace):
         pass
 
     def running(self, task):
-        if self.check_filter(task):
+        if self.check_filter(task) and task.name not in hidden_tasks:
             # filename, lineno = task.where()
             # if filename and lineno:
             #     p = Path(filename)
@@ -47,12 +51,12 @@ class schedtrace(_schedtrace):
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def suspended(self, task, trap):
-        if self.check_filter(task):
+        if self.check_filter(task) and task.name not in hidden_tasks:
             self.log.log(self.level, f"SUSPEND: {self._pretty_repr(task)}")
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def terminated(self, task):
-        if self.check_filter(task):
+        if self.check_filter(task) and task.name not in hidden_tasks:
             self.log.log(self.level, f"TERMINATED: {self._pretty_repr(task)}")
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 

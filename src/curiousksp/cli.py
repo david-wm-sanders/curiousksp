@@ -40,7 +40,6 @@ from docopt import docopt
 
 from .debug import _configure_debuggers
 from .missioncontrol import MissionControl
-from .util import _check_connection
 
 # import contextvar
 # ksp_conn: ContextVar[krpc.Connection] = ContextVar('ksp_conn', default=None)
