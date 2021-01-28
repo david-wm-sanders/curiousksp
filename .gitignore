@@ -1,3 +1,6 @@
+# any local logs
+*.log
+
 *.py[cod]
 __pycache__
 

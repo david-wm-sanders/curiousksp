@@ -125,7 +125,7 @@ class MissionControl:
             #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
             await curio.sleep(5)
             return "timeout: end of all tasks reached"
-            # raise NotImplementedError
+            raise NotImplementedError
         except curio.CancelledError:
             # print(f"tracebacks::\n{dir(e.__traceback__)}")
             logger.debug("[cancelled] MissionControl.start! cleaning up:")

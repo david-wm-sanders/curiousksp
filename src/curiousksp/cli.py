@@ -33,7 +33,7 @@ import sys
 import time
 
 from loguru import logger
-from rich.logging import RichHandler
+# from rich.logging import RichHandler
 # import curio
 # import krpc
 from docopt import docopt
@@ -46,6 +46,7 @@ from .util import _check_connection
 # ksp_conn: ContextVar[krpc.Connection] = ContextVar('ksp_conn', default=None)
 
 
+@logger.catch
 def main(argv=sys.argv):
     """
     Args:
@@ -56,9 +57,15 @@ def main(argv=sys.argv):
 
     Does stuff.
     """
-    # TODO: set up logging
     # logger.configure(handlers=[{"sink": RichHandler(markup=True), "format": "{message}"}])
-    logger.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
+    # logger.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
+    log_fmt = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
+              "<level>{level: <8}</level> | " \
+              "<level>{message}</level> [<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>]"
+    logger.configure(handlers=[{"sink": sys.stderr, "format": log_fmt}])
+    logger.add("curiousksp.log", format=log_fmt, retention="7 days", rotation="1 day")
+    # enable the library logging for CLI mode
+    logger.enable("curiousksp")
 
     args = docopt(__doc__)
     logger.debug(f"command-line parameters:\n{args}")
