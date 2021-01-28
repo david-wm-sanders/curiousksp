@@ -2,6 +2,8 @@
 import signal
 from functools import partial
 
+from loguru import logger
+
 import krpc
 import curio
 from curio.monitor import Monitor as CurioMonitor
@@ -40,7 +42,7 @@ class MissionControl:
 
     # TODO: rename to shutdown
     async def _sigint_shutdown(self):
-        print(f"Shutting down '{self._name}' mission control...")
+        logger.info(f"Shutting down '{self._name}' mission control...")
         self._running = False
         # cancel tasks
         if self._start_task:
@@ -63,7 +65,7 @@ class MissionControl:
                     if response.lower() in ["y", "ye", "yes"]:
                         await self._sigint_shutdown()
                     else:
-                        print("Shutdown declined...")
+                        logger.info("Shutdown declined...")
                 except EOFError as e:
                     # occurs at Ctrl-C/KeyboardInterrupt triggered when the input prompt is open
                     if self._shutdown_mode == "ask soft":
@@ -71,12 +73,12 @@ class MissionControl:
                         await self._sigint_shutdown()
                     else:
                         # ignore the sigint - requiring hard confirmation from user to quit
-                        print("Response required, none was given :(")
+                        logger.error("Response required, none was given :(")
             else:
                 raise ValueError(f"MissionControl._shutdown_mode must be 'now'|'ask'|'ask soft'")
 
     def _connect(self, name=None, address="127.0.0.1", rpc_port=50000, stream_port=50001):
-        print(f"Connecting to kRPC at '{address}' as '{name}' [{rpc_port=}, {stream_port=}]")
+        logger.info(f"Connecting to kRPC at '{address}' as '{name}' [{rpc_port=}, {stream_port=}]")
         conn = krpc.connect(name=name, address=address, rpc_port=rpc_port, stream_port=stream_port)
         return conn
 
@@ -92,11 +94,11 @@ class MissionControl:
                     return conn
                 except ConnectionRefusedError as e:
                     # connection refused :(, let's do nothing, wait a bit, and then try again
-                    print("Connection refused - is KSP running and is the kRPC server started?")
-                    print("Waiting 10 seconds before next KSP/kRPC connection poll attempt...")
+                    logger.error("Connection refused - is KSP running and is the kRPC server started?")
+                    logger.info("Waiting 10 seconds before next KSP/kRPC connection poll attempt...")
                 await curio.sleep(10)
         except curio.CancelledError:
-            print("MissionControl.poll_for_ksp_connect cancelled")
+            logger.debug("MissionControl.poll_for_ksp_connect cancelled")
             raise
 
     async def start(self):
@@ -107,9 +109,9 @@ class MissionControl:
             # setup background task to wait for SIGINT events
             await curio.spawn(self.sigint, daemon=True)
             # TODO: spawn monitor console with subprocess.Popen(NEW_CONSOLE)
-            poll_conn_task = await curio.spawn(self.poll_for_ksp_connect)
-            conn = await poll_conn_task.join()
-            print(f"{conn=}")
+            poll_task = await curio.spawn(self.poll_for_ksp_connect)
+            conn = await poll_task.join()
+            logger.success(f"{conn=}")
             # HACK: experiment with conn: krpc.client.Client in a totally blocking fashion
             print(conn.krpc.get_status())
             print(f"clients:{conn.krpc.clients}")
@@ -126,9 +128,9 @@ class MissionControl:
             # raise NotImplementedError
         except curio.CancelledError:
             # print(f"tracebacks::\n{dir(e.__traceback__)}")
-            print("[cancelled] MissionControl.start! cleaning up:")
-            print(f"Cancelling '{poll_conn_task.name}' [id={poll_conn_task.id}, state={poll_conn_task.state}]...")
-            await poll_conn_task.cancel()
+            logger.debug("[cancelled] MissionControl.start! cleaning up:")
+            logger.debug(f"Cancelling '{poll_task.name}' [id={poll_task.id}, state={poll_task.state}]...")
+            await poll_task.cancel()
             return "cancelled"
 
     def run(self):

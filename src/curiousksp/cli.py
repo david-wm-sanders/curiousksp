@@ -32,6 +32,8 @@ Options:
 import sys
 import time
 
+from loguru import logger
+from rich.logging import RichHandler
 # import curio
 # import krpc
 from docopt import docopt
@@ -54,15 +56,19 @@ def main(argv=sys.argv):
 
     Does stuff.
     """
+    # TODO: set up logging
+    # logger.configure(handlers=[{"sink": RichHandler(markup=True), "format": "{message}"}])
+    logger.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
+
     args = docopt(__doc__)
-    print(args)
+    logger.debug(f"command-line parameters:\n{args}")
     # le basics
     if args["_monitor"]:
         pass
 
+    # TODO: C:\Users\david\AppData\Local\hyper tasks
     # TODO: asynkrpc(?) one day... XD
     # TODO: type anno
-    # TODO: set up logging
     # TODO: process comma-sep debuggers args list of Task names into a set of the Task names
 
     addr, rpc_port, stream_port = args["--addr"], int(args["--rpc"]), int(args["--stream"])
@@ -70,6 +76,17 @@ def main(argv=sys.argv):
     mc = MissionControl(krpc_addr=addr, krpc_port=rpc_port, krpcs_port=stream_port, debuggers=debuggers)
     report = mc.run()
     print(f"{report=}")
+
+    # copied from curio.io for the mo in order to remind me than cancellation handlers can set e.var etc
+    # async def readlines(self):
+    #         lines = []
+    #         try:
+    #             async for line in self:
+    #                 lines.append(line)
+    #             return lines
+    #         except errors.CancelledError as e:
+    #             e.lines_read = lines
+    #             raise
 
     # [blocking] get the active vessel and print its name
     # vessel = conn.space_center.active_vessel
