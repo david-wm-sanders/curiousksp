@@ -41,7 +41,7 @@ class MissionControl:
             self._sigint_event.set()
 
     # TODO: rename to shutdown
-    async def _sigint_shutdown(self):
+    async def shutdown(self):
         logger.info(f"Shutting down '{self._name}' mission control...")
         self._running = False
         # cancel tasks
@@ -55,7 +55,7 @@ class MissionControl:
             self._sigint_event.clear()
             if self._shutdown_mode == "now":
                 # signal shutdown as soon as this task picks up the sigint_event it was waiting on
-                await self._sigint_shutdown()
+                await self.shutdown()
             elif self._shutdown_mode.startswith("ask"):
                 try:
                     # TODO: this really needs to use some form of async console.readline so it doesn't block :/
@@ -63,14 +63,14 @@ class MissionControl:
                     # because input blocks the Task and thus the curio.Kernel
                     response = input("Ctrl-C! Confirm to end all missions and shutdown mission control? Y/N: ")
                     if response.lower() in ["y", "ye", "yes"]:
-                        await self._sigint_shutdown()
+                        await self.shutdown()
                     else:
                         logger.info("Shutdown declined...")
                 except EOFError as e:
                     # occurs at Ctrl-C/KeyboardInterrupt triggered when the input prompt is open
                     if self._shutdown_mode == "ask soft":
                         # shutdown for the second Ctrl-C that has triggered
-                        await self._sigint_shutdown()
+                        await self.shutdown()
                     else:
                         # ignore the sigint - requiring hard confirmation from user to quit
                         logger.error("Response required, none was given :(")

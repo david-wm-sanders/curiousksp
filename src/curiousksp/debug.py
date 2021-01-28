@@ -12,28 +12,24 @@ curio_sched_level = logger.level("SCHED", no=10, color="<yellow>")
 class schedtrace(_schedtrace):
     def created(self, task):
         if self.check_filter(task):
-            # self.log.log(self.level, 'CREATE:%f:%r', time.time(), task)
-            # self.log.log(self.level, f'CREATE:{time.time():.3f}:{task!r}')
             self.log.log(self.level, f'CREATE: {task!r}')
 
     def running(self, task):
         if self.check_filter(task):
-            # self.log.log(self.level, 'RUN:%f:%r', time.time(), task)
             self.log.log(self.level, f'RUN: {task!r}')
 
     def suspended(self, task, trap):
         if self.check_filter(task):
-            # self.log.log(self.level, 'SUSPEND:%f:%r', time.time(), task)
             self.log.log(self.level, f'SUSPEND: {task!r}')
 
     def terminated(self, task):
         if self.check_filter(task):
-            # self.log.log(self.level, 'TERMINATED:%f:%r', time.time(), task)
             self.log.log(self.level, f'TERMINATED: {task!r}')
 
 
 class logcrash(_logcrash):
     pass
+    # TODO: need to subclass and override suspended to log with loguru, taking the task.exception as exc_info
 
 
 class longblock(_longblock):
@@ -41,7 +37,8 @@ class longblock(_longblock):
         if self.check_filter(task):
             duration = time.monotonic() - self.start
             if duration > self.max_time:
-                self.log.log(self.level, f'[longblock] {task!r} ran for {duration:.2f} seconds')
+                # TODO: set up a diff = duration - self.max_time, if diff > threshold: log at higher level
+                self.log.log(self.level, f'[longblock] {task!r} ran for {duration:.1f} seconds')
 
 
 def _configure_debuggers(filter_=None, max_time=0.1):
