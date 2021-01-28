@@ -17,6 +17,7 @@ curio_sched_level = logger.level("SCHED", no=10, color="<yellow>")
 hidden_tasks = {"Kernel._make_kernel_runtime.<locals>._kernel_task",
                 "Monitor.start", "Monitor.monitor_task"}
 
+
 # subclass curio.debug.schedtrace and rewrite to use loguru logger
 class schedtrace(_schedtrace):
     @staticmethod
@@ -35,7 +36,6 @@ class schedtrace(_schedtrace):
             return f"<{task.id}|{task.cycles}> '{task.name}'{location}"
         else:
             return f"[{task.id}|{task.cycles}] '{task.name}'{location}"
-        # return f"<{task.id}|{task.cycles}> '{task.name}'" if task.daemon else f"[{task.id}|{task.cycles}] '{task.name}'"
 
     def created(self, task):
         # pass on logging anything here to reduce log volume
