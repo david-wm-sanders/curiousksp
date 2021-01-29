@@ -8,7 +8,20 @@ import krpc
 import curio
 from curio.monitor import Monitor as CurioMonitor
 
-
+# 🏗️ building construction for? MissionControl?
+# 🏭 factory for factory patterns, ofc
+# 🚨 rotating light for alerts/aborts/emergency action?
+# 🚧 construction for DO NOT ENTER, THIS IS A PLACE OF DARK MAGIC 🤣 👽👽👽
+# 🚀 rocket for launchable vessels
+# ⭐ star for reputation?, 🌟 star2 for ?
+# 💫 dizzy looks like a ring with two marked points on it - peri and apo xd? could represent orbits
+# 🔥🔥🔥 fire fire fire up those engines
+# 💥 boom for CRITICAL ERRORS ;D - a RUD has occurred
+# 🐍 snake for python 3 <3
+# 📷 camera for managing ksp game camera
+# ⏰ alarm clock for timekeeping tasks
+# 📡 satellite though it really looks more like a radio comms dish so maybe communications?
+# and more, see https://gist.github.com/rxaviers/7360908 for inspiration
 class MissionControl:
     """Defines a MissionControl instance that runs curio.Tasks asynchronously."""
 
@@ -109,7 +122,7 @@ class MissionControl:
             raise
 
     async def start(self):
-        """Task: curio.Kernal.run(start) main that boots up the async parts of MissionControl."""
+        """Task: curio.Kernel.run(start) main that boots up the async parts of MissionControl."""
         # TODO: add docstrings!
         self._start_task = await curio.current_task()
         try:

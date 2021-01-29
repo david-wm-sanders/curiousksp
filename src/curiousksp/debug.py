@@ -1,4 +1,5 @@
 """Define curio.debug.DebugBase`s derived from defaults to provide enhanced logging of Kernel task state."""
+import inspect
 import itertools
 # import logging
 import time
@@ -27,15 +28,25 @@ class schedtrace(_schedtrace):
     def _pretty_repr(task):
         """Render beautified Task repr of form: ?id|cycle? where ? is <> if daemon else []."""
         location = ""
-        filename, lineno = task.where()
-        if filename and lineno:
+        filename, task_lineno = task.where()
+        if filename and task_lineno:
             p = Path(filename)
             # take from reversed path parts while part != "curiousksp" (the module)
             parts = itertools.takewhile(lambda s: s != "curiousksp", p.parts[::-1])
             # reverse so that the submodule dir part is in front of the file part of the filename
             parts = reversed(list(parts))
             filename = ".".join(parts)
-            location = f" @ {filename}:{lineno}"
+            # inspect the lines of code for this coroutine and find the single line of code the Task is on
+            lines, lineno = inspect.getsourcelines(task.coro.cr_code)
+            sloc = lines[task_lineno - lineno]
+            # tidy up the sloc by trimming left whitespace and right \n
+            sloc = sloc.lstrip().rstrip("\n")
+            # print(repr(sloc))
+            # print(f"code sample starts at line:{lineno} with '{lines[0]}'")
+            # print(f"the task_where lineno is {task_lineno}")
+            # print(f"code: {lines[task_lineno - lineno]} ???")
+            # sloc = "blep"
+            location = f" @ '{sloc}'[{filename}:{task_lineno}]"
         if task.daemon:
             return f"<{task.id}|{task.cycles}> '{task.name}'{location}"
         else:
@@ -56,7 +67,24 @@ class schedtrace(_schedtrace):
         """Log at SCHED level after a Task has suspended due to trap, noting the state e.g. 'FUTURE_WAIT'."""
         if self.check_filter(task) and task.name not in hidden_tasks:
             self.log.log(self.level, f"SUSPEND: {self._pretty_repr(task)} on '{task.state}'")
-            # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
+            # if co := task.coro:
+            #     if frame := co.cr_frame:
+            #         if f_code := frame.f_code:
+            #             if co_code := f_code.co_code:
+            #                 print(inspect.getsource(co_code))
+            # x = inspect.getsourcelines(task.coro.cr_code)
+            # print(x)
+            # print(dir(task.coro))
+            # if c := task.coro:
+                # print(c.cr_code)
+                # print(c.cr_frame)
+                # print(dir(c.cr_code))
+                # print(dir(c.cr_frame))
+                # print(dir(c.cr_frame.f_code.co_code))
+                # print(c.cr_frame.f_code.co_code)
+                # print(c.cr_frame.f_trace)
+                # print(c.cr_code.co_code)
+                # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def terminated(self, task):
         """Log at SCHED level after a Task has terminated but before it is collected (see curio.kernel.Activation)."""
