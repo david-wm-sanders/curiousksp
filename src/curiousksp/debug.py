@@ -23,6 +23,8 @@ hidden_tasks = {"Kernel._make_kernel_runtime.<locals>._kernel_task",
 # subclass curio.debug.schedtrace and rewrite to use loguru logger
 class schedtrace(_schedtrace):
     """Subclass curio.debug.schedtrace to output a richer loguru view of the Task scheduling state."""
+    log_fmt = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
+              "<level>{level: <8}</level> | <level>{message}</level>"
 
     @staticmethod
     def _pretty_repr(task):
@@ -56,12 +58,13 @@ class schedtrace(_schedtrace):
         """Log at SCHED level immediately before the next execution cycle of a Task."""
         if self.check_filter(task) and task.name not in hidden_tasks:
             self.log.log(self.level, f"RUN: {self._pretty_repr(task)}")
+            # .opt(format=self.log_fmt)
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def suspended(self, task, trap):
         """Log at SCHED level after a Task has suspended due to trap, noting the state e.g. 'FUTURE_WAIT'."""
         if self.check_filter(task) and task.name not in hidden_tasks:
-            self.log.log(self.level, f"SUSPEND: {self._pretty_repr(task)} on '{task.state}'")
+            self.log.log(self.level, f"AWAIT [{task.state}]: {self._pretty_repr(task)}")
 
     def terminated(self, task):
         """Log at SCHED level after a Task has terminated but before it is collected (see curio.kernel.Activation)."""
