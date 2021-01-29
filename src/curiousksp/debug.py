@@ -13,7 +13,7 @@ from curio.debug import schedtrace as _schedtrace, logcrash as _logcrash, longbl
 
 # curio_sched_level = logger.level("CURIO", no=10, color="<yellow>", icon="🌟")
 # setup a custom level for curio debugging
-curio_sched_level = logger.level("SCHED", no=10, color="<yellow>")
+curio_sched_level = logger.level("SCHED", no=7, color="<yellow>")
 # TODO: how to make custom level work with RichHandler?
 # set of hidden tasks
 hidden_tasks = {"Kernel._make_kernel_runtime.<locals>._kernel_task",
@@ -23,8 +23,6 @@ hidden_tasks = {"Kernel._make_kernel_runtime.<locals>._kernel_task",
 # subclass curio.debug.schedtrace and rewrite to use loguru logger
 class schedtrace(_schedtrace):
     """Subclass curio.debug.schedtrace to output a richer loguru view of the Task scheduling state."""
-    log_fmt = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
-              "<level>{level: <8}</level> | <level>{message}</level>"
 
     @staticmethod
     def _pretty_repr(task):
@@ -43,7 +41,7 @@ class schedtrace(_schedtrace):
             sloc = lines[task_lineno - lineno]
             # tidy up the sloc by trimming left whitespace and right \n
             sloc = sloc.lstrip().rstrip("\n")
-            location = f" @ '{sloc}'[{filename}:{task_lineno}]"
+            location = f" @ `{sloc}`[{filename}:{task_lineno}]"
         if task.daemon:
             return f"<{task.id}|{task.cycles}> '{task.name}'{location}"
         else:
@@ -58,8 +56,6 @@ class schedtrace(_schedtrace):
         """Log at SCHED level immediately before the next execution cycle of a Task."""
         if self.check_filter(task) and task.name not in hidden_tasks:
             self.log.log(self.level, f"▶️  {self._pretty_repr(task)}")
-            # .opt(format=self.log_fmt)
-            # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def suspended(self, task, trap):
         """Log at SCHED level after a Task has suspended due to trap, noting the state e.g. 'FUTURE_WAIT'."""

@@ -49,17 +49,17 @@ from .missioncontrol import MissionControl
 def main(argv=sys.argv):
     """Set up rich loguru cli based on arguments passed at command line."""
     # logger.configure(handlers=[{"sink": RichHandler(markup=True), "format": "{message}"}])
-    # logger.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
     log_fmt_c = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
                 "<level>{level: <8}</level> | " \
                 "<level>{message}</level>"
     log_fmt_f = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
                 "<level>{level: <8}</level> | " \
                 "<level>{message}</level> [<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>]"
-    logger.configure(handlers=[{"sink": sys.stderr, "format": log_fmt_c}])
-    logger.add("curiousksp.log", format=log_fmt_f, retention="7 days", rotation="1 day")
+    # clean up the default logger
+    logger.remove()
+    logger.configure(handlers=[{"sink": sys.stdout, "format": log_fmt_c, "level": "SCHED"}])
+    logger.add("curiousksp.log", format=log_fmt_f, level="SCHED", retention="3 days", rotation="1 day")
     # enable the library logging for CLI mode
-    # TODO: take a docopt to set tracing
     logger.enable("curiousksp")
 
     args = docopt(__doc__)
@@ -112,5 +112,6 @@ def main(argv=sys.argv):
 
     # curio'd?:
     # await run_in_thread(current_context.run, some_function, *args) ?
+    # TODO: each VesselManager needs to have a priority queue that tasks for the vessel to run can be added to
 
     return 0
