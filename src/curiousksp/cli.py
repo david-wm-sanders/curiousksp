@@ -50,11 +50,14 @@ def main(argv=sys.argv):
     """Set up rich loguru cli based on arguments passed at command line."""
     # logger.configure(handlers=[{"sink": RichHandler(markup=True), "format": "{message}"}])
     # logger.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
-    log_fmt = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
-              "<level>{level: <8}</level> | " \
-              "<level>{message}</level> [<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>]"
-    logger.configure(handlers=[{"sink": sys.stderr, "format": log_fmt}])
-    logger.add("curiousksp.log", format=log_fmt, retention="7 days", rotation="1 day")
+    log_fmt_c = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
+                "<level>{level: <8}</level> | " \
+                "<level>{message}</level>"
+    log_fmt_f = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
+                "<level>{level: <8}</level> | " \
+                "<level>{message}</level> [<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>]"
+    logger.configure(handlers=[{"sink": sys.stderr, "format": log_fmt_c}])
+    logger.add("curiousksp.log", format=log_fmt_f, retention="7 days", rotation="1 day")
     # enable the library logging for CLI mode
     # TODO: take a docopt to set tracing
     logger.enable("curiousksp")
