@@ -25,7 +25,7 @@ def read(*names, **kwargs):
 
 setup(
     name='curiousksp',
-    version='0.1.3',
+    version='0.1.4',
     license='MIT',
     description='ksp chaos with curio coroutines',
     long_description='%s\n%s' % (
