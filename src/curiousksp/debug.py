@@ -57,19 +57,19 @@ class schedtrace(_schedtrace):
     def running(self, task):
         """Log at SCHED level immediately before the next execution cycle of a Task."""
         if self.check_filter(task) and task.name not in hidden_tasks:
-            self.log.log(self.level, f"RUN: {self._pretty_repr(task)}")
+            self.log.log(self.level, f"R: {self._pretty_repr(task)}")
             # .opt(format=self.log_fmt)
             # print(f"{task.id}, {task.name}, {task.daemon}, {task.cycles}, {task.where()}")
 
     def suspended(self, task, trap):
         """Log at SCHED level after a Task has suspended due to trap, noting the state e.g. 'FUTURE_WAIT'."""
         if self.check_filter(task) and task.name not in hidden_tasks:
-            self.log.log(self.level, f"AWAIT [{task.state}]: {self._pretty_repr(task)}")
+            self.log.log(self.level, f"S: [{task.state}]: {self._pretty_repr(task)}")
 
     def terminated(self, task):
         """Log at SCHED level after a Task has terminated but before it is collected (see curio.kernel.Activation)."""
         if self.check_filter(task) and task.name not in hidden_tasks:
-            self.log.log(self.level, f"TERMINATED: {self._pretty_repr(task)}")
+            self.log.log(self.level, f"T: {self._pretty_repr(task)}")
 
 
 class logcrash(_logcrash):
