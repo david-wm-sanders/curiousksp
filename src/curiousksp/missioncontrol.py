@@ -40,8 +40,6 @@ class MissionControl:
         # TODO: separate the signalling/shutdown_mode aspects into subclass or composite?
         # setup the default shutdown mode, one of "now" | "ask" | "ask soft"
         self._shutdown_mode = "ask"
-        # set the default running state
-        # TODO: replace running paradigm by making all Tasks cancellable?
         # init curio.Kernel and curio.monitor.Monitor as None
         self._ck, self._cm = None, None
         # init task refs as None
@@ -69,7 +67,6 @@ class MissionControl:
 
     async def sigint(self):
         """Task (daemonic): wait for sigint/Ctrl-C, [block] confirm quit, resume on declined or await shutdown."""
-        # TODO: replace running paradigm by making all Tasks cancellable?
         try:
             while True:
                 await self._sigint_event.wait()
@@ -128,7 +125,6 @@ class MissionControl:
 
     async def start(self):
         """Task: curio.Kernel.run(start) main that boots up the async parts of MissionControl."""
-        # TODO: add docstrings!
         self._start_task = await curio.current_task()
         try:
             # setup background task to wait for SIGINT events
