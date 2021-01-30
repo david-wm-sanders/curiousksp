@@ -50,15 +50,16 @@ def main(argv=sys.argv):
     """Set up rich loguru cli based on arguments passed at command line."""
     # logger.configure(handlers=[{"sink": RichHandler(markup=True), "format": "{message}"}])
     log_fmt_c = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
-                "<level>{level: <8}</level> | " \
+                "<level>{level: <8}</level> |{level.icon}  " \
                 "<level>{message}</level>"
     log_fmt_f = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | " \
-                "<level>{level: <8}</level> | " \
+                "<level>{level: <8}</level> |{level.icon}  " \
                 "<level>{message}</level> [<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>]"
     # clean up the default logger
     logger.remove()
     logger.configure(handlers=[{"sink": sys.stdout, "format": log_fmt_c, "level": "SCHED"}])
     logger.add("curiousksp.log", format=log_fmt_f, level="SCHED", retention="3 days", rotation="1 day")
+    logger.level("INFO", icon="🔔")
     # enable the library logging for CLI mode
     logger.enable("curiousksp")
 

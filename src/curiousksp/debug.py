@@ -13,7 +13,7 @@ from curio.debug import schedtrace as _schedtrace, logcrash as _logcrash, longbl
 
 # curio_sched_level = logger.level("CURIO", no=10, color="<yellow>", icon="🌟")
 # setup a custom level for curio debugging
-curio_sched_level = logger.level("SCHED", no=7, color="<yellow>")
+curio_sched_level = logger.level("SCHED", no=7, color="<yellow>", icon="🐍")
 # TODO: how to make custom level work with RichHandler?
 # set of hidden tasks
 hidden_tasks = {"Kernel._make_kernel_runtime.<locals>._kernel_task",
