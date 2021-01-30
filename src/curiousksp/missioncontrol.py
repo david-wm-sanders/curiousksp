@@ -11,19 +11,19 @@ from curio.monitor import Monitor as CurioMonitor
 from .signalling import SignalHandler
 
 
-# 🏗️ building construction for? MissionControl?
-# 🏭 factory for factory patterns, ofc
-# 🚨 rotating light for alerts/aborts/emergency action?
-# 🚧 construction for DO NOT ENTER, THIS IS A PLACE OF DARK MAGIC 🤣 👽👽👽
-# 🚀 rocket for launchable vessels
-# ⭐ star for reputation?, 🌟 star2 for ?
-# 💫 dizzy looks like a ring with two marked points on it - peri and apo xd? could represent orbits
-# 🔥🔥🔥 fire fire fire up those engines
-# 💥 boom for CRITICAL ERRORS ;D - a RUD has occurred
-# 🐍 snake for python 3 <3
-# 📷 camera for managing ksp game camera
-# ⏰ alarm clock for timekeeping tasks
-# 📡 satellite though it really looks more like a radio comms dish so maybe communications?
+# 🏗️  building construction for? MissionControl?
+# 🏭  factory for factory patterns, ofc
+# 🚨  rotating light for alerts/aborts/emergency action?
+# 🚧  construction for DO NOT ENTER, this is where the aliens and the stargate are hidden 🤣  👽 👽 👽
+# 🚀  rocket for launchable vessels
+# ⭐  star for reputation?, 🌟  star2 for ?
+# 💫  dizzy looks like a ring with two marked points on it - peri and apo xd? could represent orbits
+# 🔥🔥🔥  fire fire fire up those engines
+# 💥  boom for CRITICAL ERRORS ;D - a RUD has occurred
+# 🐍  snake for python 3 <3
+# 📷  camera for managing ksp game camera
+# ⏰  alarm clock for timekeeping tasks
+# 📡  satellite though it really looks more like a radio comms dish so maybe communications?
 # and more, see https://gist.github.com/rxaviers/7360908 for inspiration
 class MissionControl:
     """Defines a MissionControl instance that runs curio.Tasks asynchronously."""
