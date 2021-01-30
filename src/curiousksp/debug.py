@@ -55,17 +55,17 @@ class schedtrace(_schedtrace):
     def running(self, task):
         """Log at SCHED level immediately before the next execution cycle of a Task."""
         if self.check_filter(task) and task.name not in hidden_tasks:
-            self.log.log(self.level, f"▶️  {self._pretty_repr(task)}")
+            logger.log(self.level, f"▶️  {self._pretty_repr(task)}")
 
     def suspended(self, task, trap):
         """Log at SCHED level after a Task has suspended due to trap, noting the state e.g. 'FUTURE_WAIT'."""
         if self.check_filter(task) and task.name not in hidden_tasks:
-            self.log.log(self.level, f"⏸  /{task.state}/ {self._pretty_repr(task)}")
+            logger.log(self.level, f"⏸  /{task.state}/ {self._pretty_repr(task)}")
 
     def terminated(self, task):
         """Log at SCHED level after a Task has terminated but before it is collected (see curio.kernel.Activation)."""
         if self.check_filter(task) and task.name not in hidden_tasks:
-            self.log.log(self.level, f"⏹  {self._pretty_repr(task)}")
+            logger.log(self.level, f"⏹  {self._pretty_repr(task)}")
 
 
 class logcrash(_logcrash):
@@ -84,13 +84,13 @@ class longblock(_longblock):
             duration = time.monotonic() - self.start
             if duration > self.max_time:
                 # TODO: set up a diff = duration - self.max_time, if diff > threshold: log at higher level
-                self.log.log(self.level, f'[longblock] {task!r} ran for {duration:.1f} seconds')
+                logger.log(self.level, f'[longblock] {task!r} ran for {duration:.1f} seconds')
 
 
 def _configure_debuggers(filter_=None, max_time=0.1):
     """Configure subclassed curio.debug.DebugBase`s for loguru logging (via Rich? maybe?)."""
     logger.debug(f"{filter_=}")
-    schedtrace_ = schedtrace(log=logger, level=curio_sched_level.name)
-    logcrash_ = logcrash(log=logger)
-    longblock_ = longblock(log=logger, level="WARNING", max_time=float(max_time))
+    schedtrace_ = schedtrace(level=curio_sched_level.name)
+    logcrash_ = logcrash()
+    longblock_ = longblock(level="WARNING", max_time=float(max_time))
     return [schedtrace_, logcrash_, longblock_]
