@@ -65,15 +65,20 @@ class MissionControl:
         conn = krpc.connect(name=name, address=address, rpc_port=rpc_port, stream_port=stream_port)
         return conn
 
+    async def connect(self, name=None, address="127.0.0.1", rpc_port=50000, stream_port=50001):
+        """Task: run in thread self._connect and return the constructed krpc.client.Client."""
+        # use a functools.partial here to pass keyword arguments into the synchronous function _connect
+        conn = await curio.run_in_thread(partial(self._connect, name=self._name, address=self._krpc_addr,
+                                                 rpc_port=self._krpc_port, stream_port=self._krpcs_port))
+        return conn
+
     async def poll_for_ksp_connect(self):
         """Task: poll for first connection as part of MissionControl.start - waiting 10 seconds before next attempt."""
         # the synchronous parts of this need to run in a separate thread - now it begins...
         try:
             while True:
                 try:
-                    # use a functools.partial here to pass keyword arguments into the synchronous function _connect
-                    conn = await curio.run_in_thread(partial(self._connect, name=self._name, address=self._krpc_addr,
-                                                             rpc_port=self._krpc_port, stream_port=self._krpcs_port))
+                    conn = await self.connect()
                     return conn
                 except ConnectionRefusedError as e:
                     # connection refused :(, let's do nothing, wait a bit, and then try again
