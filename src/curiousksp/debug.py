@@ -64,8 +64,9 @@ class schedtrace(_schedtrace):
 
     def terminated(self, task):
         """Log at SCHED level after a Task has terminated but before it is collected (see curio.kernel.Activation)."""
-        if self.check_filter(task) and task.name not in hidden_tasks:
-            logger.log(self.level, f"⏹  {self._pretty_repr(task)}")
+        # if self.check_filter(task) and task.name not in hidden_tasks:
+        #     logger.log(self.level, f"⏹  {self._pretty_repr(task)}")
+        pass
 
 
 class logcrash(_logcrash):
