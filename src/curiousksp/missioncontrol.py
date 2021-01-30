@@ -1,5 +1,5 @@
 """Define a Mission Control that bootstraps a curio.Kernel and jumps into the supernova of async/await Tasks."""
-import signal
+# import signal
 from functools import partial
 
 from loguru import logger
@@ -7,6 +7,8 @@ from loguru import logger
 import krpc
 import curio
 from curio.monitor import Monitor as CurioMonitor
+
+from .signalling import SignalHandler
 
 
 # 🏗️ building construction for? MissionControl?
@@ -37,23 +39,15 @@ class MissionControl:
         self._monitor_port = monitor_port
         self._debuggers = debuggers
 
-        # TODO: separate the signalling/shutdown_mode aspects into subclass or composite?
-        # setup the default shutdown mode, one of "now" | "ask" | "ask soft"
-        self._shutdown_mode = "ask"
         # init curio.Kernel and curio.monitor.Monitor as None
         self._ck, self._cm = None, None
         # init task refs as None
         self._start_task = None
 
-        # setup a signal so that we can catch KeyboardInterrupt/Ctrl-C and handle them async
-        self._sigint_event = curio.UniversalEvent()
-        signal.signal(signal.SIGINT, self._handle_sigint)
+        # setup a signal handler to manage Ctrl-C/KeyboardInterrupt initiated shutdown
+        self._signal_handler = SignalHandler(self.shutdown, shutdown_mode="ask soft")
 
     # TODO: add properties to guard internals like _name against changes
-    def _handle_sigint(self, signo, frame):
-        """[sync] Callback for signal.signal - communicate sigint to curio with a UniversalEvent."""
-        if not self._sigint_event.is_set():
-            self._sigint_event.set()
 
     async def shutdown(self):
         """Task: shutdown other running tasks. maybe even save some state first?."""
@@ -64,39 +58,6 @@ class MissionControl:
         # cancel tasks
         if self._start_task:
             await self._start_task.cancel()
-
-    async def sigint(self):
-        """Task (daemonic): wait for sigint/Ctrl-C, [block] confirm quit, resume on declined or await shutdown."""
-        try:
-            while True:
-                await self._sigint_event.wait()
-                self._sigint_event.clear()
-                if self._shutdown_mode == "now":
-                    # signal shutdown as soon as this task picks up the sigint_event it was waiting on
-                    await self.shutdown()
-                elif self._shutdown_mode.startswith("ask"):
-                    try:
-                        # TODO: this really needs to use some form of async console.readline so it doesn't block :/
-                        # atm, this works like a pause while awaiting confirmation or declination to shutdown
-                        # because input blocks the Task and thus the curio.Kernel
-                        response = input("Ctrl-C! Confirm to end all missions and shutdown mission control? Y/N: ")
-                        if response.lower() in ["y", "ye", "yes"]:
-                            await self.shutdown()
-                        else:
-                            logger.info("Shutdown declined...")
-                    except EOFError as e:
-                        # occurs at Ctrl-C/KeyboardInterrupt triggered when the input prompt is open
-                        if self._shutdown_mode == "ask soft":
-                            # shutdown for the second Ctrl-C that has triggered
-                            await self.shutdown()
-                        else:
-                            # ignore the sigint - requiring hard confirmation from user to quit
-                            logger.error("Response required, none was given :(")
-                else:
-                    raise ValueError(f"MissionControl._shutdown_mode must be 'now'|'ask'|'ask soft'")
-        except curio.CancelledError as e:
-            logger.debug("MissionControl.sigint cancelled")
-            raise
 
     def _connect(self, name=None, address="127.0.0.1", rpc_port=50000, stream_port=50001):
         """[sync] Return krpc.client.Client from blocking krpc.connect."""
@@ -128,7 +89,7 @@ class MissionControl:
         self._start_task = await curio.current_task()
         try:
             # setup background task to wait for SIGINT events
-            sigint_task = await curio.spawn(self.sigint, daemon=True)
+            sigint_task = await curio.spawn(self._signal_handler.sigint, daemon=True)
             # TODO: spawn monitor console with subprocess.Popen(NEW_CONSOLE)
             poll_task = await curio.spawn(self.poll_for_ksp_connect)
             conn = await poll_task.join()
