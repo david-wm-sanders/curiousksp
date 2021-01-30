@@ -84,7 +84,7 @@ class longblock(_longblock):
             duration = time.monotonic() - self.start
             if duration > self.max_time:
                 # TODO: set up a diff = duration - self.max_time, if diff > threshold: log at higher level
-                logger.log(self.level, f'[longblock] {task!r} ran for {duration:.1f} seconds')
+                logger.log(self.level, f'🔂  [longblock] {task!r} ran for {duration:.1f} seconds')
 
 
 def _configure_debuggers(filter_=None, max_time=0.1):
