@@ -1,5 +1,5 @@
 """Here there be krakens."""
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 
 from loguru import logger
 logger.disable("curiousksp")
