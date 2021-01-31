@@ -65,10 +65,10 @@ class MissionControl:
         conn = krpc.connect(name=name, address=address, rpc_port=rpc_port, stream_port=stream_port)
         return conn
 
-    async def connect(self, name=None, address="127.0.0.1", rpc_port=50000, stream_port=50001):
+    async def connect(self, name, address="127.0.0.1", rpc_port=50000, stream_port=50001):
         """Task: run in thread self._connect and return the constructed krpc.client.Client."""
         # use a functools.partial here to pass keyword arguments into the synchronous function _connect
-        conn = await curio.run_in_thread(partial(self._connect, name=self._name, address=self._krpc_addr,
+        conn = await curio.run_in_thread(partial(self._connect, name, address=self._krpc_addr,
                                                  rpc_port=self._krpc_port, stream_port=self._krpcs_port))
         return conn
 
@@ -78,15 +78,42 @@ class MissionControl:
         try:
             while True:
                 try:
-                    conn = await self.connect()
+                    conn = await self.connect(self._name)
                     return conn
                 except ConnectionRefusedError as e:
-                    # connection refused :(, let's do nothing, wait a bit, and then try again
+                    # TODO: do some form of await here to prevent logging of below after shutdown has begun?
+                    # connection refused :(, let's output some fancy logs 🐍
                     logger.error("Connection refused - is KSP running and is the kRPC server started?")
                     logger.debug("Waiting 10 seconds before next KSP/kRPC connection poll attempt...")
+                # now wait a bit before trying again
                 await curio.sleep(10)
         except curio.CancelledError:
-            logger.debug("MissionControl.poll_for_ksp_connect cancelled")
+            logger.debug("[cancelled] 'MissionControl.poll_for_ksp_connect'")
+            raise
+
+    async def heartbeat(self, downtime=3):
+        """Task (daemonic): periodically poll krpc for status information and log/display."""
+        try:
+            # TODO: make a task-local connection
+            conn = await self.connect(f"{self._name}:heartbeat")
+            # while True: get krpc.status(), print/log nicely, wait a sec or two(?), repeat
+            while True:
+                # TODO: get status
+                s = conn.krpc.get_status()
+                # print(status)
+                status = f"RPCs: {s.rpcs_executed} [{s.rpc_rate}]; " \
+                         f"IO: R: {s.bytes_read}, W: {s.bytes_written}; " \
+                         f""
+                # print(dir(s))
+                # TODO: log nicely
+                logger.debug(f"❤️  {status}")
+                await curio.sleep(downtime)
+        except curio.CancelledError as e:
+            logger.debug("[cancelled] 'MissionControl.heartbeat' - cleaning up:")
+            # close the conn
+            if conn:
+                logger.debug("Closing heartbeat connection...")
+                conn.close()
             raise
 
     async def start(self):
@@ -100,14 +127,17 @@ class MissionControl:
             conn = await poll_task.join()
             logger.success(f"{conn=}")
             # HACK: experiment with conn: krpc.client.Client in a totally blocking fashion
-            print(conn.krpc.get_status())
-            print(f"clients:{conn.krpc.clients}")
-            # print(f"services=\n {conn.krpc.get_services()}")
-            print(f"current game scene: {conn.krpc.current_game_scene}")
-            print(f"paused: {conn.krpc.paused}")
-            sci, ksd, rep = conn.space_center.science, conn.space_center.funds, conn.space_center.reputation
-            print(f"current: sci={sci:.1f}, ksd={ksd:.2f}, rep={rep:.0f}")
+            # print(conn.krpc.get_status())
+            # print(f"clients:{conn.krpc.clients}")
+            # # print(f"services=\n {conn.krpc.get_services()}")
+            # print(f"current game scene: {conn.krpc.current_game_scene}")
+            # print(f"paused: {conn.krpc.paused}")
+            # TODO: getting sci, funds, rep etc may fail with RuntimeError depending on game mode
+            # sci, ksd, rep = conn.space_center.science, conn.space_center.funds, conn.space_center.reputation
+            # print(f"current: sci={sci:.1f}, ksd={ksd:.2f}, rep={rep:.0f}")
             # TODO: spawn heartbeat/status class
+            heartbeat_task = await curio.spawn(self.heartbeat, daemon=True)
+
             # HACK: run for a while - so we have time to check interaction of sigint etc during dev
             #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
             await curio.sleep(5)
@@ -115,7 +145,7 @@ class MissionControl:
             raise NotImplementedError
         except curio.CancelledError:
             # print(f"tracebacks::\n{dir(e.__traceback__)}")
-            logger.debug("[cancelled] MissionControl.start! cleaning up:")
+            logger.debug("[cancelled] 'MissionControl.start' - cleaning up:")
             logger.debug(f"Cancelling '{sigint_task.name}' [id={sigint_task.id}, state={sigint_task.state}]...")
             await sigint_task.cancel()
             logger.debug(f"Cancelling '{poll_task.name}' [id={poll_task.id}, state={poll_task.state}]...")
