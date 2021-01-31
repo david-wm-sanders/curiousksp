@@ -94,7 +94,7 @@ class MissionControl:
             logger.debug("[cancelled] 'MissionControl.poll_for_ksp_connect'")
             raise
 
-    async def heartbeat(self, downtime=3):
+    async def heartbeat(self, downtime=5):
         """Task (daemonic): periodically poll krpc for status information and log/display."""
         try:
             conn = await self.connect(f"{self._name}:heartbeat")
@@ -115,8 +115,8 @@ class MissionControl:
                 srpcs, srpcs_exec = s.stream_rpcs, s.stream_rpcs_executed
                 st, srpcr = s.time_per_stream_update * ureg.seconds, s.stream_rpc_rate * ureg.count / ureg.second
                 sti = f"{st.to_compact():~P.1f} / stream"
-                rpc_info = f"RPCs: {rpcs} [{rpcr:~P.1f}]"
-                stream_info = f"SRPCs: {srpcs} [{srpcr:~P.1f}] ({srpcs_exec} exec)"
+                rpc_info = f"RPCs: {rpcs} [{rpcr.magnitude:.1f}/s]"
+                stream_info = f"SRPCs: {srpcs} [{srpcr.magnitude:.1f}/s] ({srpcs_exec} exec)"
                 status = f"{rpc_info} + {stream_info}; " \
                          f"IO R: {iobr.to_compact():~P.1f} [{iobrr.to_compact():~P.1f}], " \
                          f"IO W: {iobw.to_compact():~P.1f} [{iobwr.to_compact():~P.1f}]; " \
@@ -151,12 +151,11 @@ class MissionControl:
             # TODO: getting sci, funds, rep etc may fail with RuntimeError depending on game mode
             # sci, ksd, rep = conn.space_center.science, conn.space_center.funds, conn.space_center.reputation
             # print(f"current: sci={sci:.1f}, ksd={ksd:.2f}, rep={rep:.0f}")
-            # TODO: spawn heartbeat/status class
-            heartbeat_task = await curio.spawn(self.heartbeat, daemon=True)
-
+            # spawn heartbeat/status class
+            beat_task = await curio.spawn(self.heartbeat, daemon=True)
             # HACK: run for a while - so we have time to check interaction of sigint etc during dev
             #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
-            await curio.sleep(15)
+            await curio.sleep(30)
             return "timeout: end of all tasks reached"
             raise NotImplementedError
         except curio.CancelledError:
@@ -166,6 +165,8 @@ class MissionControl:
             await sigint_task.cancel()
             logger.debug(f"Cancelling '{poll_task.name}' [id={poll_task.id}, state={poll_task.state}]...")
             await poll_task.cancel()
+            logger.debug(f"Cancelling '{beat_task.name}' [id={beat_task.id}, state={beat_task.state}]...")
+            await beat_task.cancel()
             return "cancelled"
 
     def run(self):
