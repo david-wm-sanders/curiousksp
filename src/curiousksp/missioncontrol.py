@@ -8,6 +8,9 @@ import krpc
 import curio
 from curio.monitor import Monitor as CurioMonitor
 
+# import the pint UnitRegistry
+from . import ureg
+# import the SignalHandler - class which provides sigint handling task to MissionControl
 from .signalling import SignalHandler
 
 
@@ -100,9 +103,11 @@ class MissionControl:
             while True:
                 # TODO: get status
                 s = conn.krpc.get_status()
-                # print(status)
-                status = f"RPCs: {s.rpcs_executed} [{s.rpc_rate}]; " \
-                         f"IO: R: {s.bytes_read}, W: {s.bytes_written}; " \
+                # process the status into something nice
+                rpcs, rpcr = s.rpcs_executed, s.rpc_rate
+                iobr, iobw = s.bytes_read * ureg.bytes, s.bytes_written * ureg.bytes
+                status = f"RPCs: {rpcs:} [{rpcr}]; " \
+                         f"IO[R]: {iobr.to_compact():~P.2f}, IO[W]: {iobw.to_compact():~P.2f}; " \
                          f""
                 # print(dir(s))
                 # TODO: log nicely
