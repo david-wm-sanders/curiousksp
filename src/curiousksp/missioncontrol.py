@@ -134,7 +134,9 @@ class MissionControl:
 
     async def start(self):
         """Task: curio.Kernel.run(start) main that boots up the async parts of MissionControl."""
+        cancelled = False
         self._start_task = await curio.current_task()
+        sigint_task, poll_task, beat_task = None, None, None
         try:
             # setup background task to wait for SIGINT events
             sigint_task = await curio.spawn(self._signal_handler.sigint, daemon=True)
@@ -156,18 +158,21 @@ class MissionControl:
             # HACK: run for a while - so we have time to check interaction of sigint etc during dev
             #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
             await curio.sleep(30)
-            return "timeout: end of all tasks reached"
+            # return "timeout: end of all tasks reached"
             raise NotImplementedError
         except curio.CancelledError:
-            # print(f"tracebacks::\n{dir(e.__traceback__)}")
+            cancelled = True
+        finally:
             logger.debug("[cancelled] 'MissionControl.start' - cleaning up:")
             logger.debug(f"Cancelling '{sigint_task.name}' [id={sigint_task.id}, state={sigint_task.state}]...")
             await sigint_task.cancel()
-            logger.debug(f"Cancelling '{poll_task.name}' [id={poll_task.id}, state={poll_task.state}]...")
-            await poll_task.cancel()
-            logger.debug(f"Cancelling '{beat_task.name}' [id={beat_task.id}, state={beat_task.state}]...")
-            await beat_task.cancel()
-            return "cancelled"
+            if poll_task:
+                logger.debug(f"Cancelling '{poll_task.name}' [id={poll_task.id}, state={poll_task.state}]...")
+                await poll_task.cancel()
+            if beat_task:
+                logger.debug(f"Cancelling '{beat_task.name}' [id={beat_task.id}, state={beat_task.state}]...")
+                await beat_task.cancel()
+            return "cancelled" if cancelled else "timeout: end of all tasks reached"
 
     def run(self):
         """Stir this curious cauldron of dark async magic and kerbal witch/wizard blood already!."""
