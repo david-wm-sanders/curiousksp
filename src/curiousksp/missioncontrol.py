@@ -97,20 +97,31 @@ class MissionControl:
     async def heartbeat(self, downtime=3):
         """Task (daemonic): periodically poll krpc for status information and log/display."""
         try:
-            # TODO: make a task-local connection
             conn = await self.connect(f"{self._name}:heartbeat")
-            # while True: get krpc.status(), print/log nicely, wait a sec or two(?), repeat
             while True:
-                # TODO: get status
                 s = conn.krpc.get_status()
                 # process the status into something nice
-                rpcs, rpcr = s.rpcs_executed, s.rpc_rate
-                iobr, iobw = s.bytes_read * ureg.bytes, s.bytes_written * ureg.bytes
-                status = f"RPCs: {rpcs:} [{rpcr}]; " \
-                         f"IO[R]: {iobr.to_compact():~P.2f}, IO[W]: {iobw.to_compact():~P.2f}; " \
-                         f""
+                # take vars from status and build pint quantities from them
+                rpcs, rpcr = s.rpcs_executed * ureg.count, s.rpc_rate * ureg.count/ureg.second
+                iobr, iobrr = s.bytes_read * ureg.bytes, s.bytes_read_rate * ureg.bytes / ureg.second,
+                iobw, iobwr = s.bytes_written * ureg.bytes, s.bytes_written * ureg.bytes / ureg.second
+                # extract the rt (Rpc update Time) and its components: the time spent on poll and exec
+                rt = s.time_per_rpc_update * ureg.seconds
+                pt, et = s.poll_time_per_rpc_update * ureg.seconds, s.exec_time_per_rpc_update * ureg.seconds
+                # make a fancy string to represent this data - `~P:.2f` for pint pretty abbreviated .2 float acc. form
+                # `.to_compact()` is pint magic that picks the best prefix for humans
+                rti = f"{rt.to_compact():~P.2f} / update (poll:{pt.to_compact():~P.2f}, exec:{et.to_compact():~P.2f})"
+                # extract the st (Stream update Time) related information
+                srpcs, srpcs_exec = s.stream_rpcs * ureg.count, s.stream_rpcs_executed * ureg.count
+                st, srpcr = s.time_per_stream_update * ureg.seconds, s.stream_rpc_rate * ureg.count / ureg.second
+                sti = f"{st.to_compact():~P.2f} / stream"
+                rpc_info = f"RPCs: {rpcs.magnitude} [{rpcr:~P.2f}]"
+                stream_info = f"Stream RPCs: {srpcs.magnitude} [{srpcr:~P.2f}] (exec: {srpcs_exec.magnitude})"
+                status = f"{rpc_info} + {stream_info}; " \
+                         f"IO[R]: {iobr.to_compact():~P.2f} [{iobrr.to_compact():~P.2f}], " \
+                         f"IO[W]: {iobw.to_compact():~P.2f} [{iobwr.to_compact():~P.2f}]; " \
+                         f"{rti} & {sti}"
                 # print(dir(s))
-                # TODO: log nicely
                 logger.debug(f"❤️  {status}")
                 await curio.sleep(downtime)
         except curio.CancelledError as e:
@@ -145,7 +156,7 @@ class MissionControl:
 
             # HACK: run for a while - so we have time to check interaction of sigint etc during dev
             #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
-            await curio.sleep(5)
+            await curio.sleep(15)
             return "timeout: end of all tasks reached"
             raise NotImplementedError
         except curio.CancelledError:

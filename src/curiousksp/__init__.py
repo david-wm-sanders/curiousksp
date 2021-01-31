@@ -6,5 +6,6 @@ logger.disable("curiousksp")
 
 from pint import UnitRegistry, set_application_registry
 ureg = UnitRegistry()
+Q_ = ureg.Quantity
 # if pickling and unpickly quantities:
 # set_application_registry(ureg)
