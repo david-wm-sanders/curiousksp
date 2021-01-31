@@ -60,7 +60,10 @@ class schedtrace(_schedtrace):
     def suspended(self, task, trap):
         """Log at SCHED level after a Task has suspended due to trap, noting the state e.g. 'FUTURE_WAIT'."""
         if self.check_filter(task) and task.name not in hidden_tasks:
-            logger.log(self.level, f"⏸  /{task.state}/ {self._pretty_repr(task)}")
+            if task.state == "TERMINATED":
+                logger.log(self.level, f"⏹  /{task.state}/ {self._pretty_repr(task)}")
+            else:
+                logger.log(self.level, f"⏸  /{task.state}/ {self._pretty_repr(task)}")
 
     def terminated(self, task):
         """Log at SCHED level after a Task has terminated but before it is collected (see curio.kernel.Activation)."""

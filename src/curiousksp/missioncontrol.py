@@ -158,8 +158,8 @@ class MissionControl:
             logger.debug("[cancelled] 'MissionControl.start' - cleaning up:")
             logger.debug(f"Cancelling '{sigint_task.name}' [id={sigint_task.id}, state={sigint_task.state}]...")
             await sigint_task.cancel()
-            if poll_task:
-                logger.debug(f"Cancelling '{poll_task.name}' [id={poll_task.id}, state={poll_task.state}]...")
+            if poll_task and (state := poll_task.state) != "TERMINATED":
+                logger.debug(f"Cancelling '{poll_task.name}' [id={poll_task.id}, state={state}]...")
                 await poll_task.cancel()
             if beat_task:
                 logger.debug(f"Cancelling '{beat_task.name}' [id={beat_task.id}, state={beat_task.state}]...")
