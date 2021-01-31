@@ -102,24 +102,24 @@ class MissionControl:
                 s = conn.krpc.get_status()
                 # process the status into something nice
                 # take vars from status and build pint quantities from them
-                rpcs, rpcr = s.rpcs_executed * ureg.count, s.rpc_rate * ureg.count/ureg.second
+                rpcs, rpcr = s.rpcs_executed, s.rpc_rate * ureg.count / ureg.second
                 iobr, iobrr = s.bytes_read * ureg.bytes, s.bytes_read_rate * ureg.bytes / ureg.second,
                 iobw, iobwr = s.bytes_written * ureg.bytes, s.bytes_written * ureg.bytes / ureg.second
                 # extract the rt (Rpc update Time) and its components: the time spent on poll and exec
                 rt = s.time_per_rpc_update * ureg.seconds
                 pt, et = s.poll_time_per_rpc_update * ureg.seconds, s.exec_time_per_rpc_update * ureg.seconds
-                # make a fancy string to represent this data - `~P:.2f` for pint pretty abbreviated .2 float acc. form
+                # make a fancy string to represent this data - `~P:.1f` for pint pretty abbreviated .1 float acc. form
                 # `.to_compact()` is pint magic that picks the best prefix for humans
-                rti = f"{rt.to_compact():~P.2f} / update (poll:{pt.to_compact():~P.2f}, exec:{et.to_compact():~P.2f})"
+                rti = f"{rt.to_compact():~P.1f} / RPC (poll:{pt.to_compact():~P.1f}, exec:{et.to_compact():~P.1f})"
                 # extract the st (Stream update Time) related information
-                srpcs, srpcs_exec = s.stream_rpcs * ureg.count, s.stream_rpcs_executed * ureg.count
+                srpcs, srpcs_exec = s.stream_rpcs, s.stream_rpcs_executed
                 st, srpcr = s.time_per_stream_update * ureg.seconds, s.stream_rpc_rate * ureg.count / ureg.second
-                sti = f"{st.to_compact():~P.2f} / stream"
-                rpc_info = f"RPCs: {rpcs.magnitude} [{rpcr:~P.2f}]"
-                stream_info = f"Stream RPCs: {srpcs.magnitude} [{srpcr:~P.2f}] (exec: {srpcs_exec.magnitude})"
+                sti = f"{st.to_compact():~P.1f} / stream"
+                rpc_info = f"RPCs: {rpcs} [{rpcr:~P.1f}]"
+                stream_info = f"SRPCs: {srpcs} [{srpcr:~P.1f}] ({srpcs_exec} exec)"
                 status = f"{rpc_info} + {stream_info}; " \
-                         f"IO[R]: {iobr.to_compact():~P.2f} [{iobrr.to_compact():~P.2f}], " \
-                         f"IO[W]: {iobw.to_compact():~P.2f} [{iobwr.to_compact():~P.2f}]; " \
+                         f"IO R: {iobr.to_compact():~P.1f} [{iobrr.to_compact():~P.1f}], " \
+                         f"IO W: {iobw.to_compact():~P.1f} [{iobwr.to_compact():~P.1f}]; " \
                          f"{rti} & {sti}"
                 # print(dir(s))
                 logger.debug(f"❤️  {status}")
