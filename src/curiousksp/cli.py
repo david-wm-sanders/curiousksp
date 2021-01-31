@@ -80,6 +80,16 @@ def main(argv=sys.argv):
     report = mc.run()
     print(f"{report=}")
 
+    # HACK: experiment with conn: krpc.client.Client in a totally blocking fashion
+    # print(conn.krpc.get_status())
+    # print(f"clients:{conn.krpc.clients}")
+    # # print(f"services=\n {conn.krpc.get_services()}")
+    # print(f"current game scene: {conn.krpc.current_game_scene}")
+    # print(f"paused: {conn.krpc.paused}")
+    # TODO: getting sci, funds, rep etc may fail with RuntimeError depending on game mode
+    # sci, ksd, rep = conn.space_center.science, conn.space_center.funds, conn.space_center.reputation
+    # print(f"current: sci={sci:.1f}, ksd={ksd:.2f}, rep={rep:.0f}")
+
     # copied from curio.io for the mo in order to remind me than cancellation handlers can set e.var etc
     # async def readlines(self):
     #         lines = []
@@ -94,10 +104,6 @@ def main(argv=sys.argv):
     # [blocking] get the active vessel and print its name
     # vessel = conn.space_center.active_vessel
     # print(vessel.name)
-
-    # Little point in starting everything up if we can't even make a connection to KSP so do a quick check
-    # if not _check_connection():
-    #     sys.exit("Couldn't make a connection to KSP... exiting.")
 
     # conn = krpc.connect(name="curious::test")
     # token = ksp_conn.set(conn)

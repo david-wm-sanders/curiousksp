@@ -96,6 +96,7 @@ class MissionControl:
 
     async def heartbeat(self, downtime=5):
         """Task (daemonic): periodically poll krpc for status information and log/display."""
+        conn = None
         try:
             conn = await self.connect(f"{self._name}:heartbeat")
             while True:
@@ -126,6 +127,8 @@ class MissionControl:
                 await curio.sleep(downtime)
         except curio.CancelledError as e:
             logger.debug("[cancelled] 'MissionControl.heartbeat' - cleaning up:")
+            raise
+        finally:
             # close the conn
             if conn:
                 logger.debug("Closing heartbeat connection...")
@@ -144,22 +147,11 @@ class MissionControl:
             poll_task = await curio.spawn(self.poll_for_ksp_connect)
             conn = await poll_task.join()
             logger.success(f"{conn=}")
-            # HACK: experiment with conn: krpc.client.Client in a totally blocking fashion
-            # print(conn.krpc.get_status())
-            # print(f"clients:{conn.krpc.clients}")
-            # # print(f"services=\n {conn.krpc.get_services()}")
-            # print(f"current game scene: {conn.krpc.current_game_scene}")
-            # print(f"paused: {conn.krpc.paused}")
-            # TODO: getting sci, funds, rep etc may fail with RuntimeError depending on game mode
-            # sci, ksd, rep = conn.space_center.science, conn.space_center.funds, conn.space_center.reputation
-            # print(f"current: sci={sci:.1f}, ksd={ksd:.2f}, rep={rep:.0f}")
             # spawn heartbeat/status class
             beat_task = await curio.spawn(self.heartbeat, daemon=True)
             # HACK: run for a while - so we have time to check interaction of sigint etc during dev
             #       when start ends, all other spawned tasks are daemonic; self.run would return immediately
             await curio.sleep(30)
-            # return "timeout: end of all tasks reached"
-            raise NotImplementedError
         except curio.CancelledError:
             cancelled = True
         finally:
@@ -172,6 +164,7 @@ class MissionControl:
             if beat_task:
                 logger.debug(f"Cancelling '{beat_task.name}' [id={beat_task.id}, state={beat_task.state}]...")
                 await beat_task.cancel()
+            # raise Exception("test")
             return "cancelled" if cancelled else "timeout: end of all tasks reached"
 
     def run(self):
